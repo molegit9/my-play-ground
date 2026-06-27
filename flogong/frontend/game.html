@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Survival Arena</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Canvas Arena -->
+        <canvas id="gameCanvas" width="960" height="540"></canvas>
+
+        <!-- Private Invite Code Overlay Box (P1 only or visible for P1 before P2 joins) -->
+        <div id="invite-overlay" class="invite-overlay-box" style="display: none;">
+            <span>초대 코드: </span>
+            <span id="invite-code-display" class="invite-code-text">------</span>
+            <button class="copy-btn" onclick="copyInviteCode()">복사</button>
+        </div>
+
+        <!-- Waiting and Countdown Overlay -->
+        <div id="status-overlay" class="game-status-overlay">
+            <h2 id="status-title">상대방을 기다리는 중...</h2>
+            <div id="status-spinner" class="spinner"></div>
+            <p id="status-desc" style="color: var(--text-secondary); text-align: center;">상대방이 방에 입장하면 게임이 시작됩니다.</p>
+        </div>
+
+        <!-- Game Over Overlay -->
+        <div id="game-over-overlay" class="game-status-overlay" style="display: none;">
+            <h2 id="game-over-title">GAME OVER</h2>
+            <p id="game-over-result" style="font-size: 1.25rem; font-weight: 600; text-align: center;"></p>
+            <p id="game-over-time" style="color: var(--text-secondary); font-size: 1rem; text-align: center;"></p>
+            <p id="rematch-status-text" style="color: #fbbf24; font-size: 0.9rem; margin-top: 0.5rem; display: none;"></p>
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button id="rematch-btn" class="btn-primary" onclick="requestRematch()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">다시 하기</button>
+                <button class="btn-secondary" onclick="goToLobby()">로비로 돌아가기</button>
+            </div>
+        </div>
+
+        <!-- Chat Panel overlay -->
+        <div class="chat-overlay">
+            <div id="chat-messages" class="chat-messages">
+                <div class="chat-message system">채팅방에 연결되었습니다.</div>
+            </div>
+            <form id="chat-form" onsubmit="sendChatMessage(event)" class="chat-input-bar">
+                <input type="text" id="chat-input" placeholder="메시지 입력..." autocomplete="off">
+                <button type="submit">전송</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Load game logic -->
+    <script src="/static/game.js"></script>
+</body>
+</html>

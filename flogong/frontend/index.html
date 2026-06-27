@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Survival Lobby</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <!-- Nickname Overlay -->
+    <div id="nickname-overlay" class="nickname-overlay">
+        <div class="glass-container" style="max-width: 400px;">
+            <h1>FLAPPY SURVIVAL</h1>
+            <p style="text-align: center; margin-bottom: 1.5rem;">닉네임을 설정하여 시작하세요.</p>
+            <form id="nickname-form" onsubmit="submitNickname(event)">
+                <div class="form-group">
+                    <label for="nickname-input">닉네임</label>
+                    <input type="text" id="nickname-input" required maxlength="25" placeholder="닉네임 입력 (최대 25자)">
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%;">시작하기</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lobby Layout -->
+    <div class="glass-container">
+        <div class="lobby-layout">
+            <div class="lobby-header">
+                <h1>FLAPPY SURVIVAL</h1>
+                <div id="user-badge" class="lobby-user-badge">Loading...</div>
+            </div>
+
+            <!-- Join Private Room -->
+            <div>
+                <h2>초대 코드로 입장</h2>
+                <form id="invite-form" onsubmit="joinByInvite(event)" style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                    <input type="text" id="invite-code-input" placeholder="6자리 초대 코드" required maxlength="6" style="flex-grow: 1; text-transform: uppercase;">
+                    <button type="submit" class="btn-primary">입장</button>
+                </form>
+                <p id="invite-error" style="color: #ef4444; font-size: 0.85rem; margin-top: 0.5rem; display: none;"></p>
+            </div>
+
+            <!-- Public Rooms -->
+            <div>
+                <div class="lobby-header" style="border: none; padding: 0;">
+                    <h2>공개 게임 목록</h2>
+                    <div class="lobby-actions-bar">
+                        <button class="btn-primary" onclick="startComputerMatch()" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);">컴퓨터와 대결</button>
+                        <button class="btn-primary" onclick="openCreateModal()">방 만들기</button>
+                    </div>
+                </div>
+                <div id="room-list" class="room-list-container" style="margin-top: 0.5rem;">
+                    <!-- Rooms loaded dynamically -->
+                    <div class="empty-state">로딩 중...</div>
+                </div>
+            </div>
+
+            <!-- Leaderboard -->
+            <div class="leaderboard-container">
+                <h2>명예의 전당 (Top 10)</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>순위</th>
+                            <th>닉네임</th>
+                            <th>승리 횟수</th>
+                            <th>최고 생존 시간</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body">
+                        <tr>
+                            <td colspan="4" class="empty-state" style="text-align: center;">로딩 중...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Room Modal -->
+    <div id="create-modal" class="modal-overlay" onclick="closeCreateModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h2 style="border: none; padding: 0; margin-bottom: 1rem;">방 만들기</h2>
+            <form id="create-room-form" onsubmit="submitCreateRoom(event)">
+                <div class="form-group">
+                    <label for="room-name-input">방 이름</label>
+                    <input type="text" id="room-name-input" required maxlength="30" placeholder="방 이름을 입력하세요">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeCreateModal()">취소</button>
+                    <button type="submit" name="private" value="false" class="btn-primary">공개방</button>
+                    <button type="submit" name="private" value="true" class="btn-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">비공개방</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let userId = null;
+        let nickname = null;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            userId = sessionStorage.getItem("user_id");
+            nickname = sessionStorage.getItem("nickname");
+
+            if (!userId || !nickname) {
+                document.getElementById("nickname-overlay").classList.remove("fade-out");
+            } else {
+                document.getElementById("nickname-overlay").style.display = "none";
+                initializeLobby();
+            }
+        });
+
+        async function submitNickname(e) {
+            e.preventDefault();
+            const input = document.getElementById("nickname-input").value.trim();
+            if (!input) return;
+
+            try {
+                const response = await fetch("/api/users", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ nickname: input })
+                });
+                if (!response.ok) throw new Error("닉네임 등록 실패");
+                
+                const data = await response.json();
+                userId = data.user_id;
+                nickname = data.nickname;
+
+                sessionStorage.setItem("user_id", userId);
+                sessionStorage.setItem("nickname", nickname);
+
+                document.getElementById("nickname-overlay").classList.add("fade-out");
+                setTimeout(() => {
+                    document.getElementById("nickname-overlay").style.display = "none";
+                }, 500);
+
+                initializeLobby();
+            } catch (err) {
+                alert("서버 연결에 실패했습니다. 다시 시도해주세요.");
+            }
+        }
+
+        function initializeLobby() {
+            document.getElementById("user-badge").textContent = `${nickname}`;
+            
+            // Initial loads
+            loadPublicRooms();
+            loadLeaderboard();
+
+            // Poll rooms every 2 seconds
+            setInterval(loadPublicRooms, 2000);
+        }
+
+        async function loadPublicRooms() {
+            try {
+                const response = await fetch("/api/rooms");
+                if (!response.ok) throw new Error("방 목록 로드 실패");
+                const rooms = await response.json();
+
+                const container = document.getElementById("room-list");
+                if (rooms.length === 0) {
+                    container.innerHTML = `<div class="empty-state">대기 중인 공개방이 없습니다.</div>`;
+                    return;
+                }
+
+                container.innerHTML = rooms.map(room => `
+                    <div class="room-card">
+                        <div class="room-info">
+                            <h3>${escapeHtml(room.room_name)}</h3>
+                            <p>방장: ${escapeHtml(room.player1_nickname)}</p>
+                        </div>
+                        <button class="btn-primary" onclick="joinRoom('${room.room_id}')">입장</button>
+                    </div>
+                `).join("");
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function joinRoom(roomId) {
+            try {
+                const response = await fetch(`/api/rooms/${roomId}/join`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ user_id: parseInt(userId) })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    alert(errData.detail || "방 입장에 실패했습니다.");
+                    return;
+                }
+
+                window.location.href = `/game.html?room_id=${roomId}&slot=p2`;
+            } catch (err) {
+                alert("서버 오류로 인해 입장할 수 없습니다.");
+            }
+        }
+
+        async function joinByInvite(e) {
+            e.preventDefault();
+            const codeInput = document.getElementById("invite-code-input").value.trim().toUpperCase();
+            const errorElement = document.getElementById("invite-error");
+            errorElement.style.display = "none";
+
+            if (!codeInput) return;
+
+            try {
+                const response = await fetch(`/api/rooms/invite/${codeInput}`);
+                if (!response.ok) {
+                    errorElement.textContent = "유효하지 않은 코드이거나 이미 시작된 방입니다.";
+                    errorElement.style.display = "block";
+                    return;
+                }
+
+                const data = await response.json();
+                await joinRoom(data.room_id);
+            } catch (err) {
+                errorElement.textContent = "방 정보를 가져오는 데 실패했습니다.";
+                errorElement.style.display = "block";
+            }
+        }
+
+        async function loadLeaderboard() {
+            try {
+                const response = await fetch("/api/leaderboard");
+                if (!response.ok) throw new Error("리더보드 로드 실패");
+                const list = await response.json();
+
+                const tbody = document.getElementById("leaderboard-body");
+                if (list.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">기록이 없습니다. 첫 플레이어가 되어 보세요!</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = list.map((user, idx) => `
+                    <tr>
+                        <td>${idx + 1}위</td>
+                        <td>${escapeHtml(user.nickname)}</td>
+                        <td>${user.wins}승</td>
+                        <td>${(user.max_survival_ms / 1000).toFixed(2)}초</td>
+                    </tr>
+                `).join("");
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function openCreateModal() {
+            document.getElementById("create-modal").classList.add("active");
+        }
+
+        function closeCreateModal() {
+            document.getElementById("create-modal").classList.remove("active");
+        }
+
+        let isSubmitting = false;
+        async function submitCreateRoom(e) {
+            e.preventDefault();
+            if (isSubmitting) return;
+
+            const roomName = document.getElementById("room-name-input").value.trim();
+            // Determine which button clicked
+            const isPrivate = e.submitter.value === "true";
+
+            if (!roomName) return;
+
+            isSubmitting = true;
+            try {
+                const response = await fetch("/api/rooms", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        room_name: roomName,
+                        is_private: isPrivate,
+                        user_id: parseInt(userId)
+                    })
+                });
+
+                if (!response.ok) throw new Error("방 만들기 실패");
+                const data = await response.json();
+
+                closeCreateModal();
+                
+                // P1 redirects to game screen
+                window.location.href = `/game.html?room_id=${data.room_id}&slot=p1${data.invite_code ? '&code=' + data.invite_code : ''}`;
+            } catch (err) {
+                alert("방 생성 중 오류가 발생했습니다.");
+            } finally {
+                isSubmitting = false;
+            }
+        }
+
+        async function startComputerMatch() {
+            if (!userId) return;
+            try {
+                const response = await fetch("/api/rooms/computer", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ user_id: parseInt(userId) })
+                });
+
+                if (!response.ok) throw new Error("컴퓨터 매치 생성 실패");
+                const data = await response.json();
+
+                window.location.href = `/game.html?room_id=${data.room_id}&slot=p1`;
+            } catch (err) {
+                alert("컴퓨터 매치 생성 중 오류가 발생했습니다.");
+            }
+        }
+
+        function escapeHtml(str) {
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
