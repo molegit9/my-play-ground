@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="실시간 OSINT 및 AI 기반 사회공학적 피싱 위협 탐지 플랫폼. URL 및 의심스러운 텍스트를 실시간으로 분석하여 금융 사기 피해를 예방합니다.">
+    <title>Phishing Scanner - AI & OSINT 피싱 위협 검사 대시보드</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- Custom JavaScript -->
+    <script src="/static/app.js" defer></script>
+</head>
+<body>
+    <div class="glass-bg"></div>
+    <div class="container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-area">
+                <i class="fa-solid fa-shield-halved app-logo-icon"></i>
+                <div>
+                    <h1 class="app-title">Phishing Scanner</h1>
+                    <p class="app-subtitle">AI & OSINT 실시간 보이스피싱/스미싱 통합 대응 시스템</p>
+                </div>
+            </div>
+            <div class="server-status" id="server-status">
+                <span class="status-dot pulsing"></span>
+                <span class="status-text">서버 연결 확인 중...</span>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Layout -->
+        <main class="dashboard-grid">
+            
+            <!-- Left Panel: Scanning Tools -->
+            <section class="panel-left card">
+                <!-- Navigation Tabs -->
+                <div class="tab-container">
+                    <button class="tab-btn active" id="tab-url-btn" onclick="switchTab('url')">
+                        <i class="fa-solid fa-link"></i> URL 정밀 검사
+                    </button>
+                    <button class="tab-btn" id="tab-text-btn" onclick="switchTab('text')">
+                        <i class="fa-solid fa-message"></i> 문자/텍스트 검사
+                    </button>
+                </div>
+
+                <!-- Tab content: URL Scanner -->
+                <div class="tab-content active" id="tab-url">
+                    <form id="url-scan-form" onsubmit="event.preventDefault(); startUrlScan();">
+                        <label for="scan-url-input" class="input-label">검사 대상 URL 입력</label>
+                        <div class="input-group">
+                            <i class="fa-solid fa-globe input-icon"></i>
+                            <input type="url" id="scan-url-input" placeholder="https://example.com" required autocomplete="off">
+                            <button type="submit" id="url-scan-submit-btn" class="btn btn-primary">
+                                <span>검사 시작</span> <i class="fa-solid fa-magnifying-glass"></i>
+                            </button>
+                        </div>
+                        <div class="form-options">
+                            <label class="switch-container">
+                                <input type="checkbox" id="deep-scan-checkbox" checked>
+                                <span class="slider"></span>
+                                <span class="switch-label">가상 브라우저 동적 정밀 분석 (Deep Scan) 포함</span>
+                            </label>
+                        </div>
+                    </form>
+
+                    <!-- Realtime URL Scan Progress Console -->
+                    <div class="console-box hidden" id="url-console">
+                        <div class="console-header">
+                            <span><i class="fa-solid fa-terminal"></i> 분석 진행 상황 (실시간 파이프라인)</span>
+                            <div class="loader-spinner" id="url-loader"></div>
+                        </div>
+                        <div class="console-logs" id="url-logs">
+                            <!-- Progress elements will be dynamically generated -->
+                        </div>
+                    </div>
+
+                    <!-- URL Scan Result Meter/Score -->
+                    <div class="result-box hidden" id="url-result">
+                        <h2 class="result-title">최종 분석 결과</h2>
+                        <div class="result-layout">
+                            <div class="gauge-container">
+                                <div class="gauge-ring" id="url-gauge-ring">
+                                    <div class="gauge-inner">
+                                        <span class="gauge-score" id="url-safety-score">100</span>
+                                        <span class="gauge-label">안전 점수</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="result-details">
+                                <div class="badge" id="url-safety-badge">SAFE</div>
+                                <p class="result-reason" id="url-safety-reason">분석 대기 중...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab content: Text Scanner -->
+                <div class="tab-content" id="tab-text">
+                    <form id="text-scan-form" onsubmit="event.preventDefault(); startTextScan();">
+                        <label for="scan-text-input" class="input-label">의심스러운 문자/이메일 내용 입력 (사회공학 피싱 분석)</label>
+                        <div class="textarea-group">
+                            <textarea id="scan-text-input" rows="6" placeholder="여기에 의심스러운 문자(SMS) 메시지 또는 메일 내용을 붙여넣으세요. 예: [국민건강보험] 건강검진 보고서 발송..." required></textarea>
+                        </div>
+                        <div class="action-bar">
+                            <button type="button" class="btn btn-secondary" onclick="clearTextForm()">초기화</button>
+                            <button type="submit" id="text-scan-submit-btn" class="btn btn-primary">
+                                <span>위협 분석</span> <i class="fa-solid fa-brain"></i>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Realtime Text Scan Progress Console -->
+                    <div class="console-box hidden" id="text-console">
+                        <div class="console-header">
+                            <span><i class="fa-solid fa-terminal"></i> RAG 사례 및 AI 분석 동기화</span>
+                            <div class="loader-spinner" id="text-loader"></div>
+                        </div>
+                        <div class="console-logs" id="text-logs">
+                            <!-- Progress elements -->
+                        </div>
+                    </div>
+
+                    <!-- Text Scan Result Details -->
+                    <div class="result-box hidden" id="text-result">
+                        <h2 class="result-title">AI 피싱 분석 결과</h2>
+                        <div class="text-result-card">
+                            <div class="text-result-header">
+                                <div class="badge" id="text-risk-badge">위험</div>
+                                <div class="risk-score-display">피싱 위험도: <strong id="text-risk-score">95</strong>/100</div>
+                            </div>
+                            <div class="text-result-body">
+                                <div class="result-section">
+                                    <h3><i class="fa-solid fa-circle-info"></i> 분석 사유</h3>
+                                    <p id="text-risk-reason" class="result-reason">분석 정보가 없습니다.</p>
+                                </div>
+                                <div class="result-section highlight">
+                                    <h3><i class="fa-solid fa-hand-holding-hand"></i> 행동 지침 및 대응 요령</h3>
+                                    <p id="text-risk-mitigation" class="result-mitigation">메시지에 포함된 의심스러운 연결이나 전화번호는 절대로 클릭하거나 수신하지 마십시오.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Audit Logs & Stats -->
+            <section class="panel-right">
+                <!-- Status/Stats Cards -->
+                <div class="stats-row">
+                    <div class="stat-card card">
+                        <div class="stat-icon bg-blue"><i class="fa-solid fa-shield-check"></i></div>
+                        <div>
+                            <div class="stat-value" id="stats-total-count">0</div>
+                            <div class="stat-label">누적 검사 건수</div>
+                        </div>
+                    </div>
+                    <div class="stat-card card">
+                        <div class="stat-icon bg-green"><i class="fa-solid fa-check-double"></i></div>
+                        <div>
+                            <div class="stat-value" id="stats-safe-ratio">0%</div>
+                            <div class="stat-label">안전 탐지율</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Logs Table -->
+                <div class="audit-card card">
+                    <div class="audit-header">
+                        <h2><i class="fa-solid fa-clock-rotate-left"></i> 실시간 통합 보안 분석 로그</h2>
+                        <button onclick="fetchAuditLogs()" class="btn-refresh" id="refresh-logs-btn" title="로그 새로고침">
+                            <i class="fa-solid fa-rotate"></i>
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table class="audit-table">
+                            <thead>
+                                <tr>
+                                    <th>일시</th>
+                                    <th>검사 유형</th>
+                                    <th>대상 정보</th>
+                                    <th>판정 결과</th>
+                                    <th>상세</th>
+                                </tr>
+                            </thead>
+                            <tbody id="audit-log-tbody">
+                                <tr>
+                                    <td colspan="5" class="empty-row">분석 로그가 비어 있거나 연결되지 않았습니다.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal for Log Details -->
+    <div id="log-detail-modal" class="modal">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-shield-virus"></i> 보안 검사 상세 진단서</h2>
+                <span class="modal-close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">분석 일시</span>
+                        <span class="detail-val" id="modal-time">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">유형</span>
+                        <span class="detail-val" id="modal-type">-</span>
+                    </div>
+                    <div class="detail-item full-width">
+                        <span class="detail-label">검사 대상</span>
+                        <div class="detail-val code-block" id="modal-target">-</div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">종합 판정</span>
+                        <span class="detail-val" id="modal-score">-</span>
+                    </div>
+                    <div class="detail-item full-width">
+                        <span class="detail-label">AI 종합 판정 의견</span>
+                        <div class="detail-val text-block" id="modal-reason">-</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">닫기</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

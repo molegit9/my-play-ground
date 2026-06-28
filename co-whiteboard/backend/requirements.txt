@@ -1,0 +1,12 @@
+# co-whiteboard backend requirements
+
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+fastapi
+uvicorn
+python-dotenv
+pydantic
+redis>=4.6.0
+torch
+torchvision
+easyocr==1.7.1

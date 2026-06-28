@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+google-genai
+google-generativeai
+playwright
+beautifulsoup4
+httpx
+python-dotenv
+pydantic-settings
+chromadb
+sentence-transformers
+pandas
+tqdm
+tldextract

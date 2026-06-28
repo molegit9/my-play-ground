@@ -1,11 +1,13 @@
 # Databases
 *.db
 *.sqlite
+chroma_db/
 
 # Environment files
 .env
 .env.local
 .env.*
+!.env.example
 
 # Python Cache & Virtual Environments
 __pycache__/
@@ -21,3 +23,8 @@ env/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Node.js
+node_modules/
+dist/
+
