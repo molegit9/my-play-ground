@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>my-play-ground · molegit9</title>
+<meta name="description" content="molegit9의 개인 토이 프로젝트 모음. 생각나는 대로 만들고 여기에 쌓아둡니다.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:           #0a0a0d;
+    --bg-soft:      #0f0f13;
+    --surface:      #141418;
+    --surface-2:    #19191e;
+    --border:       #242429;
+    --border-soft:  #1a1a1f;
+    --text:         #eaeaed;
+    --text-dim:     #8a8a94;
+    --text-faint:   #52525a;
+    --accent:       #c4b5fd;
+    --accent-mid:   #a78bfa;
+    --accent-dim:   #7c5fe8;
+    --accent-glow:  rgba(167,139,250,0.12);
+    --accent-glow2: rgba(167,139,250,0.06);
+    --green:        #86efac;
+    --green-glow:   rgba(134,239,172,0.1);
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --radius: 12px;
+    --radius-sm: 7px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 900px 600px at 5% -5%,  rgba(124,95,232,0.18), transparent),
+      radial-gradient(ellipse 500px 400px at 95% 10%, rgba(167,139,250,0.07), transparent),
+      radial-gradient(ellipse 400px 300px at 50% 90%, rgba(124,95,232,0.06), transparent);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  ::selection { background: var(--accent-dim); color: #fff; }
+  a { color: inherit; text-decoration: none; }
+
+  .wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 28px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* HEADER */
+  header { padding: 72px 0 44px; border-bottom: 1px solid var(--border-soft); }
+
+  .header-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .prompt-line {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--accent-dim);
+    margin-bottom: 20px;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+  }
+  .prompt-line .caret {
+    display: inline-block;
+    width: 7px; height: 15px;
+    background: var(--accent);
+    margin-left: 3px;
+    vertical-align: middle;
+    border-radius: 1px;
+    animation: blink 1.1s step-start infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  h1 {
+    font-family: var(--mono);
+    font-size: clamp(26px, 5vw, 44px);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    color: var(--text);
+  }
+  h1 .sep { color: var(--accent-mid); }
+
+  .subtitle {
+    margin-top: 16px;
+    color: var(--text-dim);
+    font-size: 14.5px;
+    max-width: 480px;
+    line-height: 1.7;
+  }
+
+  .gh-link {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-faint);
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+  .gh-link:hover {
+    color: var(--accent);
+    border-color: var(--accent-dim);
+    background: var(--accent-glow2);
+  }
+
+  .stats {
+    display: flex;
+    gap: 32px;
+    margin-top: 36px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--text-faint);
+  }
+  .stats b {
+    color: var(--text);
+    font-size: 22px;
+    display: block;
+    font-weight: 700;
+    margin-bottom: 3px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* FILTER */
+  .filter-section {
+    padding: 28px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .filter-label {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--text-faint);
+    margin-right: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .filter-scroll {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .filter-scroll::-webkit-scrollbar { display: none; }
+
+  .tag-btn {
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .tag-btn:hover {
+    border-color: var(--accent-dim);
+    color: var(--text);
+    background: var(--accent-glow2);
+  }
+  .tag-btn.active {
+    background: var(--accent-glow);
+    border-color: var(--accent-mid);
+    color: var(--accent);
+  }
+
+  /* GRID */
+  .grid {
+    padding: 32px 0 90px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
+    animation: card-in 0.4s ease both;
+  }
+  .card:hover {
+    border-color: var(--accent-dim);
+    transform: translateY(-3px);
+    box-shadow:
+      0 0 0 1px var(--accent-dim),
+      0 8px 32px rgba(124,95,232,0.2),
+      0 2px 8px rgba(0,0,0,0.4);
+  }
+  .card.hidden { display: none; }
+
+  .card-head {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-soft);
+  }
+  .dots { display: flex; gap: 5px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot-r { background: #ff5f57; }
+  .dot-y { background: #febc2e; }
+  .dot-g { background: #28c840; }
+
+  .path {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--text-faint);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-left: 4px;
+  }
+  .path b { color: var(--text-dim); font-weight: 500; }
+
+  .card-body {
+    padding: 20px 18px 18px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card-title {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text);
+  }
+
+  .card-desc {
+    font-size: 13.5px;
+    color: var(--text-dim);
+    line-height: 1.65;
+    margin-bottom: 18px;
+    flex: 1;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 16px;
+  }
+  .tag {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--accent-mid);
+    background: var(--accent-glow2);
+    border: 1px solid rgba(167,139,250,0.2);
+    padding: 3px 8px;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+
+  .card-meta {
+    display: flex;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .status {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .status.live {
+    color: var(--green);
+    background: var(--green-glow);
+    border: 1px solid rgba(134,239,172,0.2);
+  }
+  .status.local {
+    color: var(--text-faint);
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-soft);
+  }
+  .dot-status {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .status.live .dot-status { animation: pulse 2s ease infinite; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+  }
+
+  .card-foot { display: flex; gap: 8px; }
+  .btn {
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 8px 0;
+    flex: 1;
+    text-align: center;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    transition: all 0.18s ease;
+    cursor: pointer;
+    display: inline-block;
+  }
+  .btn:hover {
+    border-color: var(--text-dim);
+    color: var(--text);
+    background: rgba(255,255,255,0.03);
+  }
+  .btn.primary { border-color: var(--accent-dim); color: var(--accent); }
+  .btn.primary:hover {
+    background: var(--accent-glow);
+    border-color: var(--accent-mid);
+    box-shadow: 0 0 12px rgba(167,139,250,0.2);
+  }
+  .btn.disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
+
+  /* ADD CARD */
+  .add-card {
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    color: var(--text-faint);
+    font-family: var(--mono);
+    font-size: 12.5px;
+    text-align: center;
+    gap: 10px;
+    transition: border-color 0.2s, background 0.2s;
+    animation: card-in 0.4s ease both;
+    cursor: default;
+  }
+  .add-card:hover {
+    border-color: var(--accent-dim);
+    background: var(--accent-glow2);
+    color: var(--text-dim);
+  }
+  .add-icon {
+    width: 32px; height: 32px;
+    border: 1px dashed var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: border-color 0.2s;
+  }
+  .add-card:hover .add-icon { border-color: var(--accent-dim); }
+
+  /* EMPTY STATE */
+  .empty-state {
+    display: none;
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 80px 20px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-faint);
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .empty-state.show { display: flex; }
+  .empty-state .big { font-size: 32px; margin-bottom: 6px; }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border-soft);
+    padding: 28px 0 56px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--text-faint);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  footer a { transition: color 0.15s; }
+  footer a:hover { color: var(--accent); }
+
+  @media (max-width: 640px) {
+    .wrap { padding: 0 18px; }
+    header { padding: 48px 0 32px; }
+    .header-top { flex-wrap: wrap; }
+    .gh-link { font-size: 11px; }
+    .stats { gap: 20px; }
+    .stats b { font-size: 18px; }
+    .grid { grid-template-columns: 1fr; gap: 12px; }
+  }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="header-top">
+      <div>
+        <div class="prompt-line">~/molegit9 $ ls ./my-play-ground<span class="caret"></span></div>
+        <h1>my<span class="sep">-</span>play<span class="sep">-</span>ground</h1>
+        <p class="subtitle">개인 토이 프로젝트 모음.<br>생각나는 대로 만들고, 여기에 쌓아둡니다.</p>
+      </div>
+      <a class="gh-link" href="https://github.com/molegit9/my-play-ground" target="_blank" rel="noopener">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.09.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.268 2.75 1.026A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.337 1.909-1.294 2.747-1.026 2.747-1.026.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.741 0 .267.18.577.688.48C19.138 20.161 22 16.416 22 12c0-5.523-4.477-10-10-10z"/>
+        </svg>
+        github &#8594;
+      </a>
+    </div>
+
+    <div class="stats">
+      <div><b id="stat-total">0</b>projects</div>
+      <div><b id="stat-live">0</b>live</div>
+      <div><b id="stat-tags">0</b>stacks</div>
+    </div>
+  </header>
+
+  <div class="filter-section">
+    <span class="filter-label">filter /</span>
+    <div class="filter-scroll" id="filter-scroll"></div>
+  </div>
+
+  <div class="grid" id="grid">
+    <div class="empty-state" id="empty-state">
+      <div class="big">&#xa5;\_(&#x30C4;)_/&#xa5;</div>
+      <span>해당 태그의 프로젝트가 없습니다.</span>
+    </div>
+  </div>
+
+  <footer>
+    <span>built with vanilla js &middot; last updated 2026</span>
+    <a href="https://github.com/molegit9/my-play-ground" target="_blank" rel="noopener">github.com/molegit9/my-play-ground &#8594;</a>
+  </footer>
+</div>
+
+<script>
+const projects = [
+  {
+    slug: "flogong",
+    emoji: "\uD83C\uDFAE",
+    title: "flogong",
+    desc: "\uC2E4\uC2DC\uAC04 2\uC778 \uBA40\uD2F0\uD50C\uB808\uC774\uC5B4 \uC0DD\uC874 \uAC8C\uC784. Flappy Bird\uC5D0\uC11C \uC601\uAC10\uC744 \uBC1B\uC558\uACE0, \uBB3C\uB9AC \uAE30\uBC18 \uB099\uBC31\uACFC \uD50C\uB808\uC774\uC5B4 \uAC04 \uCDA9\uB3CC \uD310\uC815\uC774 \uB4E4\uC5B4\uC788\uC2B5\uB2C8\uB2E4.",
+    tags: ["Python", "FastAPI", "WebSocket", "Canvas"],
+    status: "local",
+    repo: "https://github.com/molegit9/my-play-ground/tree/main/flogong",
+    demo: null
+  },
+  {
+    slug: "co-whiteboard",
+    emoji: "\uD83C\uDFA8",
+    title: "co-whiteboard",
+    desc: "\uC6F9\uC18C\uCF13 \uAE30\uBC18 \uC2E4\uC2DC\uAC04 \uB4DC\uB85C\uC789 \uB3D9\uAE30\uD654\uC640 EasyOCR\uC744 \uD65C\uC6A9\uD55C \uC774\uBBF8\uC9C0 \uD14D\uC2A4\uD2B8 \uCD94\uCD9C \uAE30\uB2A5\uC744 \uC81C\uACF5\uD558\uB294 \uB2E4\uC778 \uD611\uC5C5 \uD654\uC774\uD2B8\uBCF4\uB4DC.",
+    tags: ["FastAPI", "React", "Redis", "EasyOCR"],
+    status: "local",
+    repo: "https://github.com/molegit9/my-play-ground/tree/main/co-whiteboard",
+    demo: null
+  },
+  {
+    slug: "phishing-scanner-web",
+    emoji: "\uD83D\uDD0D",
+    title: "phishing-scanner-web",
+    desc: "Gemini API\uC640 RAG \uD328\uD134\uC744 \uC5F0\uB3D9\uD558\uACE0 Playwright\uB85C \uC2E4\uC81C \uC6F9\uC0AC\uC774\uD2B8\uB97C \uC2A4\uD06C\uB798\uD551\uD574, \uD53C\uC2F1/\uC2A4\uBBF8\uC2F1 \uC5EC\uBD80\uB97C \uC2EC\uCE35 \uC9C4\uB2E8\uD558\uB294 \uC704\uD611 \uBD84\uC11D \uD50C\uB7AB\uD3FC.",
+    tags: ["FastAPI", "Gemini", "Playwright", "ChromaDB"],
+    status: "local",
+    repo: "https://github.com/molegit9/my-play-ground/tree/main/phishing-scanner-web",
+    demo: null
+  }
+];
+
+const grid       = document.getElementById('grid');
+const filterEl   = document.getElementById('filter-scroll');
+const emptyState = document.getElementById('empty-state');
+let activeTag = 'all';
+
+function allTags() {
+  const s = new Set();
+  projects.forEach(p => p.tags.forEach(t => s.add(t)));
+  return [...s];
+}
+
+function countUp(el, target, duration) {
+  duration = duration || 700;
+  const start = performance.now();
+  function tick(now) {
+    const progress = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.round(ease * target);
+    if (progress < 1) requestAnimationFrame(tick);
+    else el.textContent = target;
+  }
+  requestAnimationFrame(tick);
+}
+
+function renderFilters() {
+  const tags = allTags();
+  var html = '<button class="tag-btn active" data-tag="all" id="filter-all">all</button>';
+  tags.forEach(function(t) {
+    html += '<button class="tag-btn" data-tag="' + t + '" id="filter-' + t + '">' + t + '</button>';
+  });
+  filterEl.innerHTML = html;
+
+  filterEl.querySelectorAll('.tag-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      activeTag = btn.dataset.tag;
+      filterEl.querySelectorAll('.tag-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      renderGrid();
+    });
+  });
+}
+
+function renderGrid() {
+  // remove cards and add-card but keep empty-state
+  Array.from(grid.children).forEach(function(el) {
+    if (!el.classList.contains('empty-state')) el.remove();
+  });
+
+  var visible = projects.filter(function(p) {
+    return activeTag === 'all' || p.tags.includes(activeTag);
+  });
+
+  visible.forEach(function(p, i) {
+    var statusHtml = p.status === 'live'
+      ? '<span class="status live"><span class="dot-status"></span>live</span>'
+      : '<span class="status local"><span class="dot-status"></span>local only</span>';
+    var demoBtn = p.demo
+      ? '<a class="btn primary" href="' + p.demo + '" target="_blank" rel="noopener" id="demo-' + p.slug + '">live demo</a>'
+      : '<span class="btn disabled" id="demo-' + p.slug + '">live demo</span>';
+
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.id = 'card-' + p.slug;
+    card.style.animationDelay = (i * 60) + 'ms';
+    card.innerHTML =
+      '<div class="card-head">' +
+        '<div class="dots">' +
+          '<span class="dot dot-r"></span>' +
+          '<span class="dot dot-y"></span>' +
+          '<span class="dot dot-g"></span>' +
+        '</div>' +
+        '<span class="path">~/my-play-ground/<b>' + p.slug + '</b></span>' +
+      '</div>' +
+      '<div class="card-body">' +
+        '<div class="card-title"><span class="emoji">' + p.emoji + '</span>' + p.title + '</div>' +
+        '<div class="card-desc">' + p.desc + '</div>' +
+        '<div class="tags">' + p.tags.map(function(t) { return '<span class="tag">#' + t + '</span>'; }).join('') + '</div>' +
+        '<div class="card-meta">' + statusHtml + '</div>' +
+        '<div class="card-foot">' +
+          '<a class="btn" href="' + p.repo + '" target="_blank" rel="noopener" id="code-' + p.slug + '">view code</a>' +
+          demoBtn +
+        '</div>' +
+      '</div>';
+    grid.insertBefore(card, emptyState);
+  });
+
+  if (activeTag === 'all') {
+    var addCard = document.createElement('div');
+    addCard.className = 'add-card';
+    addCard.id = 'add-new-project';
+    addCard.style.animationDelay = (visible.length * 60) + 'ms';
+    addCard.innerHTML =
+      '<div class="add-icon">+</div>' +
+      '<span>새 프로젝트는<br>이곳에 추가됩니다</span>';
+    grid.insertBefore(addCard, emptyState);
+  }
+
+  if (visible.length === 0) {
+    emptyState.classList.add('show');
+  } else {
+    emptyState.classList.remove('show');
+  }
+}
+
+function renderStats() {
+  countUp(document.getElementById('stat-total'), projects.length);
+  countUp(document.getElementById('stat-live'),  projects.filter(function(p) { return p.status === 'live'; }).length);
+  countUp(document.getElementById('stat-tags'),  allTags().length);
+}
+
+renderFilters();
+renderGrid();
+setTimeout(renderStats, 120);
+</script>
+
+</body>
+</html>
