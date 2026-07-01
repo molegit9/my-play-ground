@@ -38,7 +38,8 @@ export function Lobby({
     const params = new URLSearchParams(window.location.search);
     return params.get('room')?.toUpperCase() || '';
   });
-  const [copied, setCopied] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [showQR, setShowQR] = useState(false);
 
   const handleCreate = (e: React.FormEvent) => {
@@ -67,17 +68,46 @@ export function Lobby({
     ? `${window.location.origin}/?room=${room.id}` 
     : '';
 
+  const copyToClipboard = (text: string) => {
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).catch((err) => {
+        console.error('Failed to copy using navigator.clipboard: ', err);
+        fallbackCopyText(text);
+      });
+    } else {
+      fallbackCopyText(text);
+    }
+  };
+
+  const fallbackCopyText = (text: string) => {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.opacity = "0";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+    } catch (err) {
+      console.error('Fallback copy failed: ', err);
+    }
+    document.body.removeChild(textArea);
+  };
+
   const handleCopyCode = () => {
     if (!room) return;
-    navigator.clipboard.writeText(room.id);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    copyToClipboard(room.id);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2000);
   };
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(inviteLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    copyToClipboard(inviteLink);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
   };
 
   if (!room) {
@@ -161,8 +191,11 @@ export function Lobby({
       <div className="lobby-header">
         <div>
           <span className="room-label">ROOM CODE</span>
-          <h2 className="room-id" onClick={handleCopyCode}>
-            {room.id} <Copy size={16} className="inline-icon click-icon" />
+          <h2 className="room-id" onClick={handleCopyCode} style={{ cursor: 'pointer' }} title="Click to copy room code">
+            {room.id}{' '}
+            <span style={{ marginLeft: '6px', fontSize: '0.8rem', verticalAlign: 'middle', color: copiedCode ? 'var(--primary)' : 'inherit', transition: 'all 0.2s' }}>
+              {copiedCode ? 'Copied!' : <Copy size={16} className="inline-icon click-icon" />}
+            </span>
           </h2>
         </div>
         <div className="lobby-header-actions">
@@ -170,7 +203,7 @@ export function Lobby({
             <QrCode size={20} />
           </button>
           <button onClick={handleCopyLink} className="btn btn-secondary">
-            {copied ? 'Copied!' : 'Copy Invite Link'}
+            {copiedLink ? 'Copied!' : 'Copy Invite Link'}
           </button>
           <button onClick={leaveRoom} className="btn btn-danger btn-icon" title="Leave Room">
             <LogOut size={20} />
