@@ -69,25 +69,32 @@ export function Lobby({
     : '';
 
   const copyToClipboard = (text: string) => {
+    // Try synchronous execCommand first under the immediate click gesture context
+    const success = fallbackCopyText(text);
+    if (success) {
+      console.log('Copied successfully using fallback execCommand');
+      return;
+    }
+
+    // Fall back to modern navigator.clipboard if execCommand returns false
     if (navigator.clipboard) {
       navigator.clipboard.writeText(text)
         .then(() => {
           console.log('Copied successfully using navigator.clipboard');
         })
         .catch((err) => {
-          console.warn('navigator.clipboard failed, attempting fallback: ', err);
-          fallbackCopyText(text);
+          console.error('All clipboard copy methods failed: ', err);
         });
     } else {
-      fallbackCopyText(text);
+      console.error('Clipboard copy failed and navigator.clipboard is unavailable');
     }
   };
 
-  const fallbackCopyText = (text: string) => {
+  const fallbackCopyText = (text: string): boolean => {
     const textArea = document.createElement("textarea");
     textArea.value = text;
     
-    // Prevent zoom and keyboard layout changes on mobile
+    // Position far off-screen but fully rendered (fully opaque)
     textArea.style.fontSize = '12pt';
     textArea.style.position = 'absolute';
     textArea.style.left = '-9999px';
@@ -111,16 +118,15 @@ export function Lobby({
       textArea.select();
     }
     
+    let successful = false;
     try {
-      const successful = document.execCommand('copy');
-      if (!successful) {
-        console.error('execCommand copy returned false');
-      }
+      successful = document.execCommand('copy');
     } catch (err) {
-      console.error('Fallback copy failed: ', err);
+      console.warn('Fallback execCommand failed: ', err);
     }
     
     document.body.removeChild(textArea);
+    return successful;
   };
 
   const handleCopyCode = () => {
