@@ -38,6 +38,15 @@ export function MinesweeperBoard({
   const [touchMode, setTouchMode] = useState<'reveal' | 'flag'>('reveal'); // For mobile tap override
   const longPressTimeout = useRef<number | null>(null);
   const isTouchActive = useRef<boolean>(false);
+  const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
 
 
@@ -54,8 +63,10 @@ export function MinesweeperBoard({
     if (!container) return;
 
     const displayWidth = container.clientWidth;
-    const displayHeight = container.clientHeight || displayWidth;
-    const canvasSize = Math.min(displayWidth, displayHeight);
+    const isPortrait = windowSize.height > windowSize.width;
+    const canvasSize = isPortrait 
+      ? displayWidth 
+      : Math.min(displayWidth, container.clientHeight || displayWidth);
 
     // Set canvas dimensions with high-DPI scaling support
     const dpr = window.devicePixelRatio || 1;
@@ -205,7 +216,7 @@ export function MinesweeperBoard({
         }
       }
     }
-  }, [board, size, hoveredCell, penaltyActive, gameState]);
+  }, [board, size, hoveredCell, penaltyActive, gameState, windowSize]);
 
   // Translate click screen coordinates to row/col index
   const getCellFromEvent = (e: MouseEvent<HTMLCanvasElement>): { r: number; c: number } | null => {

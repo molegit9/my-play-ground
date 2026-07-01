@@ -24,7 +24,25 @@ const LEVEL_CONFIGS = [
 
 export function useMinesweeper(onStateChange?: (score: number, boardsCleared: number, boardState: any) => void) {
   const [level, setLevel] = useState(1);
-  const [board, setBoard] = useState<Cell[][]>([]);
+  const [board, setBoard] = useState<Cell[][]>(() => {
+    // Generate a default 9x9 blank board
+    const newBoard: Cell[][] = [];
+    for (let r = 0; r < 9; r++) {
+      const row: Cell[] = [];
+      for (let c = 0; c < 9; c++) {
+        row.push({
+          r,
+          c,
+          isMine: false,
+          isRevealed: false,
+          isFlagged: false,
+          neighborMines: 0
+        });
+      }
+      newBoard.push(row);
+    }
+    return newBoard;
+  });
   const [gameState, setGameState] = useState<GameStatus>('idle');
   const [totalScore, setTotalScore] = useState(0);
   const [currentBoardScore, setCurrentBoardScore] = useState(0);
@@ -100,6 +118,7 @@ export function useMinesweeper(onStateChange?: (score: number, boardsCleared: nu
   // Generate mines on first click, avoiding the clicked cell and its neighbors
   const placeMines = useCallback((grid: Cell[][], startRow: number, startCol: number, totalMines: number) => {
     const gridSize = grid.length;
+    if (gridSize === 0) return;
     let minesPlaced = 0;
 
     while (minesPlaced < totalMines) {
@@ -109,7 +128,7 @@ export function useMinesweeper(onStateChange?: (score: number, boardsCleared: nu
       // Check if candidate cell is the clicked cell or in its 3x3 surrounding area
       const isStartArea = Math.abs(r - startRow) <= 1 && Math.abs(c - startCol) <= 1;
 
-      if (!grid[r][c].isMine && !isStartArea) {
+      if (grid[r]?.[c] && !grid[r][c].isMine && !isStartArea) {
         grid[r][c].isMine = true;
         minesPlaced++;
       }
@@ -118,14 +137,14 @@ export function useMinesweeper(onStateChange?: (score: number, boardsCleared: nu
     // Calculate neighbors
     for (let r = 0; r < gridSize; r++) {
       for (let c = 0; c < gridSize; c++) {
-        if (grid[r][c].isMine) continue;
+        if (!grid[r]?.[c] || grid[r][c].isMine) continue;
         let count = 0;
         for (let dr = -1; dr <= 1; dr++) {
           for (let dc = -1; dc <= 1; dc++) {
             const nr = r + dr;
             const nc = c + dc;
             if (nr >= 0 && nr < gridSize && nc >= 0 && nc < gridSize) {
-              if (grid[nr][nc].isMine) count++;
+              if (grid[nr]?.[nc]?.isMine) count++;
             }
           }
         }
@@ -137,6 +156,7 @@ export function useMinesweeper(onStateChange?: (score: number, boardsCleared: nu
   // Flood fill algorithm to open empty cells
   const revealCellRecursive = useCallback((grid: Cell[][], r: number, c: number) => {
     const gridSize = grid.length;
+    if (gridSize === 0 || !grid[r] || !grid[r][c]) return;
     const cell = grid[r][c];
     if (cell.isRevealed || cell.isFlagged || cell.isMine) return;
 
@@ -165,6 +185,7 @@ export function useMinesweeper(onStateChange?: (score: number, boardsCleared: nu
   // Handle clicking a cell (Left Click)
   const revealCell = useCallback((row: number, col: number) => {
     if (gameState === 'exploded' || gameState === 'cleared' || penaltyActive) return;
+    if (!board || board.length === 0 || !board[row] || !board[row][col]) return;
 
     const newBoard = board.map(r => r.map(c => ({ ...c })));
     let currentIsFirst = isFirstClick;
@@ -249,6 +270,7 @@ export function useMinesweeper(onStateChange?: (score: number, boardsCleared: nu
   // Handle Flagging a Cell (Right Click / Long Press)
   const toggleFlag = useCallback((row: number, col: number) => {
     if (gameState === 'exploded' || gameState === 'cleared' || penaltyActive) return;
+    if (!board || board.length === 0 || !board[row] || !board[row][col]) return;
 
     const newBoard = board.map(r => r.map(c => ({ ...c })));
     const cell = newBoard[row][col];
@@ -263,6 +285,7 @@ export function useMinesweeper(onStateChange?: (score: number, boardsCleared: nu
   // Handle Chord (Double Click or clicking revealed number)
   const chordCell = useCallback((row: number, col: number) => {
     if (gameState === 'exploded' || gameState === 'cleared' || penaltyActive) return;
+    if (!board || board.length === 0 || !board[row] || !board[row][col]) return;
 
     const cell = board[row][col];
     if (!cell.isRevealed || cell.neighborMines === 0) return;

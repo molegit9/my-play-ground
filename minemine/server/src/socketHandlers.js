@@ -16,10 +16,22 @@ export function setupSocketHandlers(io) {
 
     // Join Room
     socket.on('join-room', ({ roomId, nickname }) => {
+      const oldRoomId = roomManager.playerRoomMap.get(socket.id);
+      
       const result = roomManager.joinRoom(roomId, socket.id, nickname);
       if (result.error) {
         socket.emit('join-error', result.error);
         return;
+      }
+      
+      // If switching rooms, leave the old Socket.IO room channel on the server and update other players
+      if (oldRoomId && oldRoomId !== roomId) {
+        socket.leave(oldRoomId);
+        const oldRoom = roomManager.rooms.get(oldRoomId);
+        if (oldRoom) {
+          io.to(oldRoomId).emit('room-updated', oldRoom);
+          io.to(oldRoomId).emit('player-disconnected', { playerId: socket.id });
+        }
       }
       
       socket.join(roomId);
