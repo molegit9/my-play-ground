@@ -1,0 +1,52 @@
+name: Deploy minemine to NCP
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: |
+            minemine/client/package-lock.json
+            minemine/server/package-lock.json
+
+      - name: Build Client React App
+        run: |
+          cd minemine/client
+          npm ci --legacy-peer-deps
+          npm run build
+
+      - name: Install Server Production Dependencies
+        run: |
+          cd minemine/server
+          npm ci
+
+  deploy:
+    name: Deploy to NCP
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.NCP_HOST }}
+          username: ${{ secrets.NCP_USERNAME }}
+          key: ${{ secrets.NCP_SSH_KEY }}
+          port: ${{ secrets.NCP_PORT || 22 }}
+          script: |
+            cd ~/minemine
+            git pull origin main
+            cd minemine/server
+            npm install --only=production
+            pm2 restart ecosystem.config.js --env production
