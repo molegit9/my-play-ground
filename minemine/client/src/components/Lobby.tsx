@@ -69,11 +69,15 @@ export function Lobby({
     : '';
 
   const copyToClipboard = (text: string) => {
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(text).catch((err) => {
-        console.error('Failed to copy using navigator.clipboard: ', err);
-        fallbackCopyText(text);
-      });
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          console.log('Copied successfully using navigator.clipboard');
+        })
+        .catch((err) => {
+          console.warn('navigator.clipboard failed, attempting fallback: ', err);
+          fallbackCopyText(text);
+        });
     } else {
       fallbackCopyText(text);
     }
@@ -82,18 +86,40 @@ export function Lobby({
   const fallbackCopyText = (text: string) => {
     const textArea = document.createElement("textarea");
     textArea.value = text;
-    textArea.style.position = "fixed";
-    textArea.style.top = "0";
-    textArea.style.left = "0";
-    textArea.style.opacity = "0";
+    
+    // Prevent zoom and keyboard layout changes on mobile
+    textArea.style.fontSize = '12pt';
+    textArea.style.position = 'absolute';
+    textArea.style.left = '-9999px';
+    textArea.style.top = '0';
+    textArea.setAttribute('readonly', '');
+    
     document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
+    
+    const isIOS = navigator.userAgent.match(/ipad|iphone/i);
+    if (isIOS) {
+      const range = document.createRange();
+      range.selectNodeContents(textArea);
+      const selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+      textArea.setSelectionRange(0, 999999);
+    } else {
+      textArea.focus();
+      textArea.select();
+    }
+    
     try {
-      document.execCommand('copy');
+      const successful = document.execCommand('copy');
+      if (!successful) {
+        console.error('execCommand copy returned false');
+      }
     } catch (err) {
       console.error('Fallback copy failed: ', err);
     }
+    
     document.body.removeChild(textArea);
   };
 
