@@ -68,76 +68,35 @@ export function Lobby({
     ? `${window.location.origin}/?room=${room.id}` 
     : '';
 
-  const copyToClipboard = (text: string) => {
-    // Try synchronous execCommand first under the immediate click gesture context
-    const success = fallbackCopyText(text);
-    if (success) {
-      console.log('Copied successfully using fallback execCommand');
-      return;
-    }
-
-    // Fall back to modern navigator.clipboard if execCommand returns false
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text)
-        .then(() => {
-          console.log('Copied successfully using navigator.clipboard');
-        })
-        .catch((err) => {
-          console.error('All clipboard copy methods failed: ', err);
-        });
-    } else {
-      console.error('Clipboard copy failed and navigator.clipboard is unavailable');
-    }
-  };
-
-  const fallbackCopyText = (text: string): boolean => {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    
-    // Position far off-screen but fully rendered (fully opaque)
-    textArea.style.fontSize = '12pt';
-    textArea.style.position = 'absolute';
-    textArea.style.left = '-9999px';
-    textArea.style.top = '0';
-    textArea.setAttribute('readonly', '');
-    
-    document.body.appendChild(textArea);
-    
-    const isIOS = navigator.userAgent.match(/ipad|iphone/i);
-    if (isIOS) {
-      const range = document.createRange();
-      range.selectNodeContents(textArea);
-      const selection = window.getSelection();
-      if (selection) {
-        selection.removeAllRanges();
-        selection.addRange(range);
-      }
-      textArea.setSelectionRange(0, 999999);
-    } else {
-      textArea.focus();
-      textArea.select();
-    }
-    
-    let successful = false;
+  const copyToClipboard = async (text: string) => {
     try {
-      successful = document.execCommand('copy');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        console.log('Copied successfully using navigator.clipboard');
+      } else {
+        // HTTP 환경 fallback
+        const el = document.createElement('textarea');
+        el.value = text;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        console.log('Copied successfully using fallback execCommand');
+      }
     } catch (err) {
-      console.warn('Fallback execCommand failed: ', err);
+      console.error('복사 실패', err);
     }
-    
-    document.body.removeChild(textArea);
-    return successful;
   };
 
-  const handleCopyCode = () => {
+  const handleCopyCode = async () => {
     if (!room) return;
-    copyToClipboard(room.id);
+    await copyToClipboard(room.id);
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  const handleCopyLink = () => {
-    copyToClipboard(inviteLink);
+  const handleCopyLink = async () => {
+    await copyToClipboard(inviteLink);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
   };
